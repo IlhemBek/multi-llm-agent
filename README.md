@@ -1,17 +1,17 @@
-# 🤖 Multi-LLM AI Agent
+# Multi-LLM AI Agent
 
 An intelligent AI agent built with **LangChain**, **FastAPI**, and **Streamlit** that supports both **Claude (Anthropic)** and **Groq (LLaMA 3.3)** as LLM providers.
 
-## ✨ Features
+## Features
 
-- 🔀 **Switch between LLMs** — Claude API or Groq, selectable at runtime
-- 🌤 **Weather Tool** — Real-time weather data via OpenWeatherMap
-- 🧮 **Calculator Tool** — Evaluate mathematical expressions
-- 🔍 **Web Search Tool** — DuckDuckGo Instant Answers (no API key needed)
-- 🖥 **Streamlit UI** — Clean chat interface with example queries
-- ⚡ **FastAPI Backend** — REST API for programmatic access
+-  **Switch between LLMs** — Claude API or Groq, selectable at runtime
+-  **Weather Tool** — Real-time weather data via OpenWeatherMap
+-  **Calculator Tool** — Evaluate mathematical expressions
+-  **Web Search Tool** — DuckDuckGo Instant Answers (no API key needed)
+-  **Streamlit UI** — Clean chat interface with example queries
+-  **FastAPI Backend** — REST API for programmatic access
 
-## 🏗 Project Structure
+##  Project Structure
 
 ```
 multi_llm_agent/
@@ -29,7 +29,7 @@ multi_llm_agent/
 └── README.md
 ```
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### 1. Clone the repository
 
@@ -77,7 +77,7 @@ uvicorn api.main:app --reload
 
 API docs available at: `http://localhost:8000/docs`
 
-## 📡 API Usage
+##  API Usage
 
 ```bash
 # Query with Claude
@@ -91,7 +91,7 @@ curl -X POST http://localhost:8000/query \
   -d '{"query": "What is 15% of 8500?", "provider": "groq"}'
 ```
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
@@ -103,7 +103,7 @@ curl -X POST http://localhost:8000/query \
 | Weather Data | OpenWeatherMap API |
 | Web Search | DuckDuckGo API |
 
-## 📄 License
+##  License
 
 MIT License — feel free to use and modify.
 
