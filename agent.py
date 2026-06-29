@@ -1,79 +1,43 @@
 import os
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_anthropic import ChatAnthropic
 from langchain_groq import ChatGroq
+from langchain_anthropic import ChatAnthropic
 from tools import TOOLS
 
-
-SYSTEM_PROMPT = """You are a helpful AI assistant with access to the following tools:
-
-1. **get_weather**: Get real-time weather for any city
-2. **calculate**: Evaluate mathematical expressions
-3. **web_search**: Search the web for information
-
-Always use the appropriate tool when the user's question requires it.
-Be concise, accurate, and friendly in your responses.
-"""
-
-
-def get_llm(provider: str = "claude", model: str = None):
-    """Initialize LLM based on provider choice."""
+def get_llm(provider="groq", model=None):
     if provider == "claude":
-        model = model or "claude-sonnet-4-6"
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY not set in environment.")
-        return ChatAnthropic(model=model, anthropic_api_key=api_key, temperature=0)
-    
+        model = model or "claude-haiku-4-5-20251001"
+        return ChatAnthropic(model=model, anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"), temperature=0)
     elif provider == "groq":
         model = model or "llama-3.3-70b-versatile"
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY not set in environment.")
-        return ChatGroq(model=model, groq_api_key=api_key, temperature=0)
-    
+        return ChatGroq(model=model, groq_api_key=os.getenv("GROQ_API_KEY"), temperature=0)
     else:
-        raise ValueError(f"Unknown provider: {provider}. Choose 'claude' or 'groq'.")
+        raise ValueError(f"Unknown provider: {provider}")
 
-
-def build_agent(provider: str = "claude", model: str = None) -> AgentExecutor:
-    """Build and return a LangChain agent with tools."""
-    llm = get_llm(provider, model)
-    
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT),
-        MessagesPlaceholder("chat_history", optional=True),
-        ("human", "{input}"),
-        MessagesPlaceholder("agent_scratchpad"),
-    ])
-    
-    agent = create_tool_calling_agent(llm, TOOLS, prompt)
-    
-    return AgentExecutor(
-        agent=agent,
-        tools=TOOLS,
-        verbose=True,
-        max_iterations=5,
-        handle_parsing_errors=True,
-    )
-
-
-def run_agent(query: str, provider: str = "claude", model: str = None) -> dict:
-    """Run agent with a query and return result."""
+def run_agent(query, provider="groq", model=None):
     try:
-        agent_executor = build_agent(provider, model)
-        result = agent_executor.invoke({"input": query})
-        return {
-            "success": True,
-            "provider": provider,
-            "query": query,
-            "response": result.get("output", "No response generated.")
-        }
+        llm = get_llm(provider, model)
+        llm_with_tools = llm.bind_tools(TOOLS)
+        messages = [{"role": "user", "content": query}]
+        response = llm_with_tools.invoke(messages)
+        
+        if response.tool_calls:
+            tool_map = {t.name: t for t in TOOLS}
+            messages.append(response)
+            for tool_call in response.tool_calls:
+                tool = tool_map.get(tool_call["name"])
+                if tool:
+                    result = tool.invoke(tool_call["args"])
+                    messages.append({
+                        "role": "tool",
+                        "content": str(result),
+                        "tool_call_id": tool_call["id"]
+                    })
+            final = llm_with_tools.invoke(messages)
+            return {"success": True, "provider": provider, "query": query, "response": final.content}
+        
+        return {"success": True, "provider": provider, "query": query, "response": response.content}
     except Exception as e:
-        return {
-            "success": False,
-            "provider": provider,
-            "query": query,
-            "error": str(e)
-        }
+        return {"success": False, "provider": provider, "query": query, "error": str(e)}
+
+def build_agent(provider="groq", model=None):
+    return get_llm(provider, model)
